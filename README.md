@@ -8,39 +8,9 @@ Claude Code の status line は、Pro/Max などの Claude.ai サブスクライ
 
 このプロジェクトでは `scripts/claude-statusline.js` がその値を保存し、Electron アプリが保存先を監視してメニューバーに残り時間を表示します。
 
-## 起動
+## インストール
 
-```bash
-npm install
-npm start
-```
-
-## 配布用ビルド
-
-macOS 用の `.app` と zip アーカイブを作るには次を実行します。
-
-```bash
-npm run make
-```
-
-成果物は `out/` 配下に作成されます。署名用の環境変数がない場合は、ローカル確認用の未署名ビルドになります。
-
-Developer ID 署名と notarization を行う場合は、`.env.example` を参考にして Git 管理外の `.env` を作成し、次のように読み込んでからビルドします。
-
-```bash
-set -a
-source .env
-set +a
-npm run make
-```
-
-ビルド後の確認コマンドです。
-
-```bash
-codesign --verify --deep --strict --verbose=2 out/cctimer-darwin-arm64/cctimer.app
-spctl -a -vvv -t exec out/cctimer-darwin-arm64/cctimer.app
-xcrun stapler validate out/cctimer-darwin-arm64/cctimer.app
-```
+最新の zip を [Releases](https://github.com/Yu-kiKimura/cctimer/releases) からダウンロードし、展開した `cctimer.app` を `Applications` に移動して起動してください。
 
 ## Claude Code 側の設定
 
