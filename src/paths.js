@@ -3,14 +3,17 @@
 const os = require('node:os');
 const path = require('node:path');
 
-const repoRoot = path.join(__dirname, '..');
+const sourceRoot = path.join(__dirname, '..');
 const appDataDir = process.env.CCTIMER_APP_DATA_DIR || path.join(os.homedir(), 'Library', 'Application Support', 'cctimer');
+const runtimeRoot = process.env.CCTIMER_RUNTIME_DIR || path.join(appDataDir, 'runtime');
 
 module.exports = {
   appDataDir,
+  runtimeRoot,
   statePath: process.env.CCTIMER_STATE_PATH || path.join(appDataDir, 'rate-limit.json'),
   setupConfigPath: process.env.CCTIMER_SETUP_CONFIG_PATH || path.join(appDataDir, 'statusline-config.json'),
   claudeSettingsPath: process.env.CCTIMER_CLAUDE_SETTINGS_PATH || path.join(os.homedir(), '.claude', 'settings.json'),
-  statuslineScriptPath: path.join(repoRoot, 'scripts', 'claude-statusline.js'),
-  wrapperPath: path.join(repoRoot, 'scripts', 'statusline-wrapper.js')
+  sourceRoot,
+  statuslineScriptPath: path.join(runtimeRoot, 'scripts', 'claude-statusline.js'),
+  wrapperPath: path.join(runtimeRoot, 'scripts', 'statusline-wrapper.js')
 };

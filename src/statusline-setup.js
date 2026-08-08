@@ -5,9 +5,19 @@ const path = require('node:path');
 const {
   appDataDir,
   claudeSettingsPath,
+  runtimeRoot,
   setupConfigPath,
+  sourceRoot,
   wrapperPath
 } = require('./paths');
+
+const RUNTIME_FILES = [
+  'scripts/claude-statusline.js',
+  'scripts/statusline-wrapper.js',
+  'src/paths.js',
+  'src/statusline-setup.js',
+  'src/statusline-state.js'
+];
 
 function shellQuote(value) {
   return `'${String(value).replace(/'/g, `'\\''`)}'`;
@@ -19,6 +29,17 @@ function getNodeCommand() {
 
 function getWrapperCommand() {
   return `${shellQuote(getNodeCommand())} ${shellQuote(wrapperPath)}`;
+}
+
+function isCctimerWrapperCommand(command) {
+  return typeof command === 'string' &&
+    command.includes('statusline-wrapper.js') &&
+    command.includes('cctimer');
+}
+
+function normalizeOriginalCommand(command) {
+  if (!command || isCctimerWrapperCommand(command)) return null;
+  return command;
 }
 
 function readJson(filePath, fallback) {
@@ -45,6 +66,16 @@ function backupFile(filePath) {
   return backupPath;
 }
 
+function installRuntimeFiles() {
+  for (const relativePath of RUNTIME_FILES) {
+    const sourcePath = path.join(sourceRoot, relativePath);
+    const targetPath = path.join(runtimeRoot, relativePath);
+
+    fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+    if (sourcePath !== targetPath) fs.copyFileSync(sourcePath, targetPath);
+  }
+}
+
 function getSetupStatus() {
   const settings = readJson(claudeSettingsPath, {});
   const command = settings.statusLine?.command || null;
@@ -55,7 +86,7 @@ function getSetupStatus() {
     installed: command === wrapperCommand,
     command,
     wrapperCommand,
-    originalCommand: config.original_command || null,
+    originalCommand: normalizeOriginalCommand(config.original_command),
     settingsPath: claudeSettingsPath,
     configPath: setupConfigPath
   };
@@ -77,11 +108,12 @@ function installStatusline() {
   const existingCommand = existingStatusLine.command || null;
   const currentConfig = readJson(setupConfigPath, {});
   const alreadyInstalled = existingCommand === wrapperCommand;
-  const originalCommand = alreadyInstalled
-    ? currentConfig.original_command || null
+  const originalCommand = alreadyInstalled || isCctimerWrapperCommand(existingCommand)
+    ? normalizeOriginalCommand(currentConfig.original_command)
     : existingCommand;
 
   fs.mkdirSync(appDataDir, { recursive: true });
+  installRuntimeFiles();
   writeJson(setupConfigPath, {
     installed_at: new Date().toISOString(),
     original_command: originalCommand,
@@ -114,5 +146,6 @@ function installStatusline() {
 module.exports = {
   getSetupStatus,
   getWrapperCommand,
+  isCctimerWrapperCommand,
   installStatusline
 };

@@ -5,7 +5,7 @@ const { exec } = require('node:child_process');
 const { readFileSync } = require('node:fs');
 const { setupConfigPath, wrapperPath } = require('../src/paths');
 const { saveFromInput } = require('../src/statusline-state');
-const { getWrapperCommand } = require('../src/statusline-setup');
+const { getWrapperCommand, isCctimerWrapperCommand } = require('../src/statusline-setup');
 
 function readStdin() {
   return new Promise((resolve) => {
@@ -55,7 +55,9 @@ async function main() {
   }
 
   const originalCommand = readOriginalCommand();
-  const isRecursive = originalCommand === getWrapperCommand() || originalCommand?.includes(wrapperPath);
+  const isRecursive = originalCommand === getWrapperCommand() ||
+    originalCommand?.includes(wrapperPath) ||
+    isCctimerWrapperCommand(originalCommand);
 
   if (originalCommand && !isRecursive) {
     const output = await runOriginalCommand(originalCommand, input);
