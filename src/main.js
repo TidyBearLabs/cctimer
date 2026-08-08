@@ -4,7 +4,7 @@ const { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, screen } = require
 const fs = require('node:fs');
 const path = require('node:path');
 const { statePath } = require('./paths');
-const { formatRemaining } = require('./statusline-state');
+const { formatRemaining, isFutureReset } = require('./statusline-state');
 const { getSetupStatus, installStatusline } = require('./statusline-setup');
 
 let tray;
@@ -45,11 +45,16 @@ function buildViewModel() {
   const freshState = readState();
   if (freshState) lastState = freshState;
   const state = lastState;
+  const nowMs = Date.now();
 
   const fiveHour = state?.five_hour || {};
   const sevenDay = state?.seven_day || {};
-  const resetAt = Number.isFinite(fiveHour.resets_at) ? fiveHour.resets_at : null;
-  const used = Number.isFinite(fiveHour.used_percentage) ? fiveHour.used_percentage : null;
+  const resetAt = isFutureReset(fiveHour.resets_at, nowMs) ? fiveHour.resets_at : null;
+  const used = resetAt !== null && Number.isFinite(fiveHour.used_percentage) ? fiveHour.used_percentage : null;
+  const sevenDayResetAt = isFutureReset(sevenDay.resets_at, nowMs) ? sevenDay.resets_at : null;
+  const sevenDayUsed = sevenDayResetAt !== null && Number.isFinite(sevenDay.used_percentage)
+    ? sevenDay.used_percentage
+    : null;
 
   return {
     statePath,
@@ -59,12 +64,12 @@ function buildViewModel() {
       usedPercentage: used,
       resetsAt: resetAt,
       resetTime: formatResetTime(resetAt),
-      remaining: formatRemaining(resetAt)
+      remaining: formatRemaining(resetAt, nowMs)
     },
     sevenDay: {
-      usedPercentage: Number.isFinite(sevenDay.used_percentage) ? sevenDay.used_percentage : null,
-      resetsAt: Number.isFinite(sevenDay.resets_at) ? sevenDay.resets_at : null,
-      resetTime: formatResetDateTime(sevenDay.resets_at)
+      usedPercentage: sevenDayUsed,
+      resetsAt: sevenDayResetAt,
+      resetTime: formatResetDateTime(sevenDayResetAt)
     }
   };
 }

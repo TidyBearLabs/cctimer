@@ -5,14 +5,18 @@ const path = require('node:path');
 const { statePath } = require('./paths');
 
 function formatRemaining(resetEpochSeconds, nowMs = Date.now()) {
-  if (!Number.isFinite(resetEpochSeconds)) return '--:--:--';
+  if (!isFutureReset(resetEpochSeconds, nowMs)) return '--:--:--';
 
-  const remainingSeconds = Math.max(0, Math.ceil(resetEpochSeconds - nowMs / 1000));
+  const remainingSeconds = Math.ceil(resetEpochSeconds - nowMs / 1000);
   const hours = Math.floor(remainingSeconds / 3600);
   const minutes = Math.floor((remainingSeconds % 3600) / 60);
   const seconds = remainingSeconds % 60;
 
   return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function isFutureReset(resetEpochSeconds, nowMs = Date.now()) {
+  return Number.isFinite(resetEpochSeconds) && resetEpochSeconds > nowMs / 1000;
 }
 
 function buildState(data) {
@@ -44,7 +48,7 @@ function buildStatusLine(state) {
   const used = state.five_hour.used_percentage;
   const reset = state.five_hour.resets_at;
 
-  if (used == null || reset == null) return model;
+  if (used == null || !isFutureReset(reset)) return model;
 
   return `${model} 5h ${Math.round(used)}% reset ${formatRemaining(reset)}`;
 }
@@ -64,6 +68,7 @@ module.exports = {
   buildState,
   buildStatusLine,
   formatRemaining,
+  isFutureReset,
   saveFromInput,
   writeState
 };
