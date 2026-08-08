@@ -10,7 +10,7 @@ Claude Code の status line は、Pro/Max などの Claude.ai サブスクライ
 
 ## インストール
 
-最新の zip を [Releases](https://github.com/Yu-kiKimura/cctimer/releases) からダウンロードし、展開した `cctimer.app` を `Applications` に移動して起動してください。
+最新の zip を [Releases](https://github.com/TidyBearLabs/cctimer/releases) からダウンロードし、展開した `cctimer.app` を `Applications` に移動して起動してください。
 
 ## Claude Code 側の設定
 
