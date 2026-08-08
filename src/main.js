@@ -103,8 +103,7 @@ function createWindow() {
     alwaysOnTop: true,
     frame: false,
     transparent: true,
-    vibrancy: 'menu',
-    visualEffectState: 'active',
+    backgroundColor: '#00000000',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

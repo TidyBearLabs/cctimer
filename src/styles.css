@@ -5,7 +5,7 @@
   --text: #171717;
   --muted: #666666;
   --line: rgba(0, 0, 0, 0.12);
-  --panel: rgba(248, 248, 248, 0.92);
+  --panel: rgba(248, 248, 248, 0.64);
   --accent: #c15f3c;
   --accent-strong: #9f4b2d;
 }
@@ -15,7 +15,7 @@
     --text: #f4f4f5;
     --muted: #a1a1aa;
     --line: rgba(255, 255, 255, 0.14);
-    --panel: rgba(30, 30, 32, 0.9);
+    --panel: rgba(30, 30, 32, 0.68);
     --accent: #de7356;
     --accent-strong: #f0a085;
   }
