@@ -4,5 +4,6 @@ out/
 dist/
 release/
 .DS_Store
+.env
 npm-debug.log*
 *.log
