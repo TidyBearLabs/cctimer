@@ -99,6 +99,8 @@ function createWindow() {
     show: false,
     resizable: false,
     fullscreenable: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
     frame: false,
     transparent: true,
     vibrancy: 'menu',
@@ -110,6 +112,11 @@ function createWindow() {
     }
   });
 
+  window.setAlwaysOnTop(true, 'pop-up-menu');
+  window.setVisibleOnAllWorkspaces(true, {
+    visibleOnFullScreen: true,
+    skipTransformProcessType: true
+  });
   window.loadFile(path.join(__dirname, 'index.html'));
   window.on('blur', () => window.hide());
 }
