@@ -1,0 +1,8 @@
+# Where: repository root. What: ignore local dependencies and runtime files. Why: keep the repo reviewable.
+node_modules/
+out/
+dist/
+release/
+.DS_Store
+npm-debug.log*
+*.log

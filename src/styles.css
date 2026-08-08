@@ -1,0 +1,197 @@
+/* Where: Electron renderer styles. What: compact macOS popover UI. Why: keep the timer readable from the menu bar. */
+
+:root {
+  color-scheme: light dark;
+  --text: #171717;
+  --muted: #666666;
+  --line: rgba(0, 0, 0, 0.12);
+  --panel: rgba(248, 248, 248, 0.92);
+  --accent: #c15f3c;
+  --accent-strong: #9f4b2d;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #f4f4f5;
+    --muted: #a1a1aa;
+    --line: rgba(255, 255, 255, 0.14);
+    --panel: rgba(30, 30, 32, 0.9);
+    --accent: #de7356;
+    --accent-strong: #f0a085;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 410px;
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: transparent;
+}
+
+.panel {
+  width: 320px;
+  height: 410px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.2);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.label {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+h1 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.badge {
+  display: grid;
+  width: 34px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.timer {
+  margin-bottom: 14px;
+}
+
+.remaining {
+  margin-bottom: 10px;
+  color: var(--accent-strong);
+  font-size: 46px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 720;
+  line-height: 1;
+}
+
+.meters {
+  display: grid;
+  gap: 6px;
+}
+
+.meterRow {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.meterRow span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.meter {
+  overflow: hidden;
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--line);
+}
+
+.meterFill {
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 180ms ease;
+}
+
+.meterFillSubtle {
+  opacity: 0.68;
+}
+
+.stats {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.stats div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+dd {
+  margin: 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.statsMeta dt,
+.statsMeta dd {
+  font-size: 11px;
+}
+
+.path {
+  overflow: hidden;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.setup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+button {
+  min-width: 86px;
+  height: 28px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  color: var(--accent-strong);
+  background: transparent;
+  font: inherit;
+  font-weight: 650;
+}
+
+button:disabled {
+  opacity: 0.55;
+}

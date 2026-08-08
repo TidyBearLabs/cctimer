@@ -1,0 +1,71 @@
+<!-- Where: Electron renderer HTML. What: timer popover shell. Why: display Claude Code reset data from the menu bar. -->
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cctimer</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="panel">
+      <header class="header">
+        <div>
+          <p class="label">Claude Code</p>
+          <h1 data-model>Claude Code</h1>
+        </div>
+        <div class="badge">5h</div>
+      </header>
+
+      <section class="timer" aria-label="5時間レートリミット">
+        <p class="label">リセットまで</p>
+        <div class="remaining" data-remaining>--:--:--</div>
+        <div class="meters" aria-hidden="true">
+          <div class="meterRow">
+            <span>5h</span>
+            <div class="meter">
+              <div class="meterFill" data-bar></div>
+            </div>
+          </div>
+          <div class="meterRow">
+            <span>7d</span>
+            <div class="meter">
+              <div class="meterFill meterFillSubtle" data-seven-day-bar></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <dl class="stats">
+        <div>
+          <dt>使用率</dt>
+          <dd data-used>--%</dd>
+        </div>
+        <div>
+          <dt>リセット時刻</dt>
+          <dd data-reset>未取得</dd>
+        </div>
+        <div>
+          <dt>7日使用率</dt>
+          <dd data-seven-day-used>--%</dd>
+        </div>
+        <div>
+          <dt>7日リセット</dt>
+          <dd data-seven-day-reset>未取得</dd>
+        </div>
+        <div class="statsMeta">
+          <dt>最終更新</dt>
+          <dd data-updated>未取得</dd>
+        </div>
+      </dl>
+
+      <section class="setup">
+        <span data-setup-status>確認中</span>
+        <button type="button" data-setup-button>セットアップ</button>
+      </section>
+
+      <p class="path" data-path></p>
+    </main>
+    <script src="./renderer.js"></script>
+  </body>
+</html>

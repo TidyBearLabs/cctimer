@@ -1,0 +1,19 @@
+{
+  "name": "cctimer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Claude Code rate limit countdown for the macOS menu bar.",
+  "main": "src/main.js",
+  "scripts": {
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "start": "electron .",
+    "setup": "node scripts/setup-statusline.js",
+    "statusline": "node scripts/claude-statusline.js"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.11.2",
+    "@electron-forge/maker-zip": "^7.11.2",
+    "electron": "^43.3.0"
+  }
+}
