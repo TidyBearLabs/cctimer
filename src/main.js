@@ -10,11 +10,41 @@ const { getSetupStatus, installStatusline } = require('./statusline-setup');
 let tray;
 let window;
 let timerId;
-let resetNotificationTimerId;
-let scheduledNotificationResetAt = null;
-let lastNotifiedResetAt = null;
+const notificationTimers = new Map();
+const scheduledNotifications = new Map();
+const notifiedNotifications = new Set();
 let lastState = null;
 const maxNotificationDelayMs = 2_147_483_647;
+const notificationSchedules = [
+  {
+    id: 'five-hour-warning',
+    stateKey: 'five_hour',
+    offsetMs: 30 * 60 * 1000,
+    title: 'Claude Code 5h timer resets soon',
+    body: 'The 5h rate limit cycle resets in 30 minutes.'
+  },
+  {
+    id: 'five-hour-reset',
+    stateKey: 'five_hour',
+    offsetMs: 0,
+    title: 'Claude Code 5h timer reset',
+    body: 'The 5h rate limit cycle has reset.'
+  },
+  {
+    id: 'seven-day-warning',
+    stateKey: 'seven_day',
+    offsetMs: 60 * 60 * 1000,
+    title: 'Claude Code 7d timer resets soon',
+    body: 'The 7d rate limit cycle resets in 1 hour.'
+  },
+  {
+    id: 'seven-day-reset',
+    stateKey: 'seven_day',
+    offsetMs: 0,
+    title: 'Claude Code 7d timer reset',
+    body: 'The 7d rate limit cycle has reset.'
+  }
+];
 const startupNotificationPromptPath = path.join(
   appDataDir,
   `notification-permission-prompt-${app.isPackaged ? 'packaged' : 'development'}.json`
@@ -87,63 +117,87 @@ function updateTrayTitle() {
   tray.setTitle(`↻ ${viewModel.fiveHour.remaining}`, {
     fontType: 'monospacedDigit'
   });
-  scheduleResetNotification(viewModel.fiveHour.resetsAt);
+  scheduleNotifications({
+    five_hour: viewModel.fiveHour.resetsAt,
+    seven_day: viewModel.sevenDay.resetsAt
+  });
 
   if (window && !window.isDestroyed()) {
     window.webContents.send('state:update', viewModel);
   }
 }
 
-function clearResetNotificationTimer() {
-  if (!resetNotificationTimerId) return;
+function clearNotificationTimer(scheduleId) {
+  const timerIdToClear = notificationTimers.get(scheduleId);
+  if (timerIdToClear) clearTimeout(timerIdToClear);
 
-  clearTimeout(resetNotificationTimerId);
-  resetNotificationTimerId = null;
+  notificationTimers.delete(scheduleId);
+  scheduledNotifications.delete(scheduleId);
 }
 
-function showResetNotification(resetAt) {
-  if (lastNotifiedResetAt === resetAt || !Notification.isSupported()) return;
+function showScheduledNotification(schedule, resetAt) {
+  const notificationKey = `${schedule.id}:${resetAt}`;
+  if (notifiedNotifications.has(notificationKey) || !Notification.isSupported()) return;
 
-  lastNotifiedResetAt = resetAt;
+  notifiedNotifications.add(notificationKey);
   const notification = new Notification({
-    title: 'Claude Code timer reset',
-    body: 'The 5h rate limit cycle has reset.'
+    title: schedule.title,
+    body: schedule.body
   });
 
   notification.show();
 }
 
-function notifyIfResetIsCurrent(resetAt) {
+function notifyIfScheduleIsCurrent(schedule, resetAt) {
   const freshState = readState();
   if (freshState) lastState = freshState;
 
-  scheduledNotificationResetAt = null;
-  resetNotificationTimerId = null;
+  notificationTimers.delete(schedule.id);
+  scheduledNotifications.delete(schedule.id);
 
   // The timeout may fire after Claude Code has already reported a newer cycle.
-  if (lastState?.five_hour?.resets_at !== resetAt) return;
+  if (lastState?.[schedule.stateKey]?.resets_at !== resetAt) return;
 
-  showResetNotification(resetAt);
+  showScheduledNotification(schedule, resetAt);
   updateTrayTitle();
 }
 
-function scheduleResetNotification(resetAt) {
-  if (!isFutureReset(resetAt) || lastNotifiedResetAt === resetAt) {
-    scheduledNotificationResetAt = null;
-    clearResetNotificationTimer();
+function scheduleNotification(schedule, resetAt) {
+  const notificationKey = `${schedule.id}:${resetAt}`;
+  // Keep an existing timer until its callback runs, including at the exact reset time.
+  if (scheduledNotifications.get(schedule.id) === resetAt) return;
+
+  if (!isFutureReset(resetAt) || notifiedNotifications.has(notificationKey)) {
+    clearNotificationTimer(schedule.id);
     return;
   }
 
-  if (scheduledNotificationResetAt === resetAt) return;
+  clearNotificationTimer(schedule.id);
+  scheduledNotifications.set(schedule.id, resetAt);
 
-  scheduledNotificationResetAt = resetAt;
-  clearResetNotificationTimer();
-
+  // If the app starts inside the warning window, show that warning immediately.
+  const notificationAtMs = resetAt * 1000 - schedule.offsetMs;
   const delayMs = Math.min(
-    Math.max(0, Math.ceil(resetAt * 1000 - Date.now())),
+    Math.max(0, Math.ceil(notificationAtMs - Date.now())),
     maxNotificationDelayMs
   );
-  resetNotificationTimerId = setTimeout(() => notifyIfResetIsCurrent(resetAt), delayMs);
+  const scheduledTimerId = setTimeout(
+    () => notifyIfScheduleIsCurrent(schedule, resetAt),
+    delayMs
+  );
+  notificationTimers.set(schedule.id, scheduledTimerId);
+}
+
+function scheduleNotifications(resetTimes) {
+  for (const schedule of notificationSchedules) {
+    scheduleNotification(schedule, resetTimes[schedule.stateKey]);
+  }
+}
+
+function clearNotificationTimers() {
+  for (const schedule of notificationSchedules) {
+    clearNotificationTimer(schedule.id);
+  }
 }
 
 function hasPromptedForStartupNotifications() {
@@ -268,7 +322,7 @@ app.whenReady().then(() => {
 
 app.on('before-quit', () => {
   if (timerId) clearInterval(timerId);
-  clearResetNotificationTimer();
+  clearNotificationTimers();
 });
 
 app.on('window-all-closed', (event) => {
