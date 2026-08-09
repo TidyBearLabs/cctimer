@@ -1,5 +1,7 @@
 // Where: Electron Forge configuration. What: build, sign, and notarize the macOS app when credentials are provided. Why: provide a distributable cctimer bundle without committing secrets.
 
+const path = require('node:path');
+
 const hasSigningIdentity = Boolean(process.env.CSC_NAME);
 const hasNotarizationCredentials = Boolean(
   process.env.APPLE_ID &&
@@ -13,7 +15,7 @@ module.exports = {
     appCategoryType: 'public.app-category.developer-tools',
     asar: false,
     executableName: 'cctimer',
-    icon: undefined,
+    icon: path.join(__dirname, 'assets/icon'),
     ...(hasSigningIdentity
       ? {
           osxSign: {
