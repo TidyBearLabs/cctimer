@@ -6,28 +6,28 @@ const resetEl = document.querySelector('[data-reset]');
 const sevenDayUsedEl = document.querySelector('[data-seven-day-used]');
 const sevenDayResetEl = document.querySelector('[data-seven-day-reset]');
 const updatedEl = document.querySelector('[data-updated]');
-const modelEl = document.querySelector('[data-model]');
 const barEl = document.querySelector('[data-bar]');
 const sevenDayBarEl = document.querySelector('[data-seven-day-bar]');
 const setupStatusEl = document.querySelector('[data-setup-status]');
 const setupButtonEl = document.querySelector('[data-setup-button]');
 
 function formatUpdatedAt(value) {
-  if (!value) return '未取得';
+  if (!value) return 'Unavailable';
 
   const updatedAtMs = new Date(value).getTime();
-  if (!Number.isFinite(updatedAtMs)) return '未取得';
+  if (!Number.isFinite(updatedAtMs)) return 'Unavailable';
 
   const elapsedSeconds = Math.max(0, Math.floor((Date.now() - updatedAtMs) / 1000));
   const elapsedMinutes = Math.floor(elapsedSeconds / 60);
 
-  if (elapsedMinutes < 1) return '1分未満前';
-  if (elapsedMinutes < 60) return `${elapsedMinutes}分前`;
+  if (elapsedMinutes < 1) return 'Less than a minute ago';
+  if (elapsedMinutes < 60) return `${elapsedMinutes} minute${elapsedMinutes === 1 ? '' : 's'} ago`;
 
   const elapsedHours = Math.floor(elapsedMinutes / 60);
-  if (elapsedHours < 24) return `${elapsedHours}時間前`;
+  if (elapsedHours < 24) return `${elapsedHours} hour${elapsedHours === 1 ? '' : 's'} ago`;
 
-  return `${Math.floor(elapsedHours / 24)}日前`;
+  const elapsedDays = Math.floor(elapsedHours / 24);
+  return `${elapsedDays} day${elapsedDays === 1 ? '' : 's'} ago`;
 }
 
 function render(state) {
@@ -40,20 +40,19 @@ function render(state) {
 
   remainingEl.textContent = state.fiveHour.remaining;
   usedEl.textContent = Number.isFinite(used) ? `${Math.round(used)}%` : '--%';
-  resetEl.textContent = state.fiveHour.resetTime || '未取得';
+  resetEl.textContent = state.fiveHour.resetTime || 'Unavailable';
   sevenDayUsedEl.textContent = Number.isFinite(sevenDayUsed)
     ? `${Math.round(sevenDayUsed)}%`
     : '--%';
-  sevenDayResetEl.textContent = state.sevenDay.resetTime || '未取得';
+  sevenDayResetEl.textContent = state.sevenDay.resetTime || 'Unavailable';
   updatedEl.textContent = formatUpdatedAt(state.updatedAt);
-  modelEl.textContent = state.model;
   barEl.style.width = `${normalizedUsed}%`;
   sevenDayBarEl.style.width = `${normalizedSevenDayUsed}%`;
 }
 
 function renderSetupStatus(status) {
-  setupStatusEl.textContent = status.installed ? '設定済み' : '未設定';
-  setupButtonEl.textContent = status.installed ? '再設定' : 'セットアップ';
+  setupStatusEl.textContent = status.installed ? 'Configured' : 'Not configured';
+  setupButtonEl.textContent = status.installed ? 'Configure again' : 'Setup';
   setupButtonEl.disabled = false;
 }
 
@@ -61,19 +60,19 @@ async function refreshSetupStatus() {
   try {
     renderSetupStatus(await window.cctimer.getSetupStatus());
   } catch {
-    setupStatusEl.textContent = '確認不可';
+    setupStatusEl.textContent = 'Unavailable';
     setupButtonEl.disabled = false;
   }
 }
 
 setupButtonEl.addEventListener('click', async () => {
   setupButtonEl.disabled = true;
-  setupStatusEl.textContent = '処理中';
+  setupStatusEl.textContent = 'Configuring';
 
   try {
     renderSetupStatus(await window.cctimer.installStatusline());
   } catch {
-    setupStatusEl.textContent = '失敗';
+    setupStatusEl.textContent = 'Failed';
     setupButtonEl.disabled = false;
   }
 });

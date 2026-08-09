@@ -62,7 +62,7 @@ function readState() {
 function formatResetTime(resetEpochSeconds) {
   if (!Number.isFinite(resetEpochSeconds)) return null;
 
-  return new Intl.DateTimeFormat('ja-JP', {
+  return new Intl.DateTimeFormat('en-US', {
     hour: '2-digit',
     minute: '2-digit'
   }).format(new Date(resetEpochSeconds * 1000));
@@ -71,7 +71,7 @@ function formatResetTime(resetEpochSeconds) {
 function formatResetDateTime(resetEpochSeconds) {
   if (!Number.isFinite(resetEpochSeconds)) return null;
 
-  return new Intl.DateTimeFormat('ja-JP', {
+  return new Intl.DateTimeFormat('en-US', {
     month: 'numeric',
     day: 'numeric',
     hour: '2-digit',

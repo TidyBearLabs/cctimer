@@ -47,7 +47,7 @@ function readJson(filePath, fallback) {
     return JSON.parse(fs.readFileSync(filePath, 'utf8'));
   } catch (error) {
     if (error.code === 'ENOENT') return fallback;
-    throw new Error(`${filePath} の JSON を読めません: ${error.message}`);
+    throw new Error(`Unable to read JSON from ${filePath}: ${error.message}`);
   }
 }
 
@@ -97,11 +97,11 @@ function installStatusline() {
   const existingStatusLine = settings.statusLine || {};
 
   if (typeof existingStatusLine !== 'object' || Array.isArray(existingStatusLine)) {
-    throw new Error('settings.json の statusLine が object ではないため、自動設定できません。');
+    throw new Error('Unable to configure automatically because statusLine in settings.json is not an object.');
   }
 
   if (existingStatusLine.type && existingStatusLine.type !== 'command') {
-    throw new Error('既存の statusLine.type が command ではないため、自動設定できません。');
+    throw new Error('Unable to configure automatically because the existing statusLine.type is not command.');
   }
 
   const wrapperCommand = getWrapperCommand();

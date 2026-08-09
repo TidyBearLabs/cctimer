@@ -1,6 +1,6 @@
 <!-- Where: Electron renderer HTML. What: timer popover shell. Why: display Claude Code reset data from the menu bar. -->
 <!doctype html>
-<html lang="ja">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,15 +10,11 @@
   <body>
     <main class="panel">
       <header class="header">
-        <div>
-          <p class="label">Claude Code</p>
-          <h1 data-model>Claude Code</h1>
-        </div>
+        <h1>Claude Code</h1>
         <div class="badge">5h</div>
       </header>
 
-      <section class="timer" aria-label="5時間レートリミット">
-        <p class="label">リセットまで</p>
+      <section class="timer" aria-label="5-hour rate limit">
         <div class="remaining" data-remaining>--:--:--</div>
         <div class="meters" aria-hidden="true">
           <div class="meterRow">
@@ -38,30 +34,30 @@
 
       <dl class="stats">
         <div>
-          <dt>使用率</dt>
+          <dt>Usage</dt>
           <dd data-used>--%</dd>
         </div>
         <div>
-          <dt>リセット時刻</dt>
-          <dd data-reset>未取得</dd>
+          <dt>Reset time</dt>
+          <dd data-reset>Unavailable</dd>
         </div>
         <div>
-          <dt>週間使用率</dt>
+          <dt>Weekly usage</dt>
           <dd data-seven-day-used>--%</dd>
         </div>
         <div>
-          <dt>週間リセット</dt>
-          <dd data-seven-day-reset>未取得</dd>
+          <dt>Weekly reset</dt>
+          <dd data-seven-day-reset>Unavailable</dd>
         </div>
         <div class="statsMeta">
-          <dt>最終更新</dt>
-          <dd data-updated>未取得</dd>
+          <dt>Last updated</dt>
+          <dd data-updated>Unavailable</dd>
         </div>
       </dl>
 
       <section class="setup">
-        <span data-setup-status>確認中</span>
-        <button type="button" data-setup-button>セットアップ</button>
+        <span data-setup-status>Checking</span>
+        <button type="button" data-setup-button>Setup</button>
       </section>
     </main>
     <script src="./renderer.js"></script>
