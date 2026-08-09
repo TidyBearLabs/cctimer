@@ -7,6 +7,9 @@ const { appDataDir, statePath } = require('./paths');
 const { formatRemaining, isFutureReset } = require('./statusline-state');
 const { getSetupStatus, installStatusline } = require('./statusline-setup');
 
+// The popover is simple enough to render in software and does not need a GPU process.
+app.disableHardwareAcceleration();
+
 let tray;
 let window;
 let timerId;
@@ -59,6 +62,22 @@ function readState() {
   }
 }
 
+function refreshStateFromDisk() {
+  const freshState = readState();
+  if (!freshState) return false;
+
+  lastState = freshState;
+  return true;
+}
+
+function watchStateFile() {
+  // Poll file metadata, then read JSON only when Claude Code updates the file.
+  fs.watchFile(statePath, { interval: 1000 }, (current, previous) => {
+    if (current.mtimeMs === previous.mtimeMs && current.size === previous.size) return;
+    if (refreshStateFromDisk()) updateTrayTitle();
+  });
+}
+
 function formatResetTime(resetEpochSeconds) {
   if (!Number.isFinite(resetEpochSeconds)) return null;
 
@@ -80,8 +99,6 @@ function formatResetDateTime(resetEpochSeconds) {
 }
 
 function buildViewModel() {
-  const freshState = readState();
-  if (freshState) lastState = freshState;
   const state = lastState;
   const nowMs = Date.now();
 
@@ -149,8 +166,7 @@ function showScheduledNotification(schedule, resetAt) {
 }
 
 function notifyIfScheduleIsCurrent(schedule, resetAt) {
-  const freshState = readState();
-  if (freshState) lastState = freshState;
+  refreshStateFromDisk();
 
   notificationTimers.delete(schedule.id);
   scheduledNotifications.delete(schedule.id);
@@ -242,9 +258,9 @@ function createTrayImage() {
 }
 
 function createWindow() {
-  window = new BrowserWindow({
+  const createdWindow = new BrowserWindow({
     width: 320,
-    height: 410,
+    height: 342,
     show: false,
     resizable: false,
     fullscreenable: false,
@@ -259,19 +275,26 @@ function createWindow() {
       nodeIntegration: false
     }
   });
+  window = createdWindow;
 
-  window.setAlwaysOnTop(true, 'pop-up-menu');
-  window.setVisibleOnAllWorkspaces(true, {
+  createdWindow.setAlwaysOnTop(true, 'pop-up-menu');
+  createdWindow.setVisibleOnAllWorkspaces(true, {
     visibleOnFullScreen: true,
     skipTransformProcessType: true
   });
-  window.loadFile(path.join(__dirname, 'index.html'));
-  window.on('blur', () => window.hide());
+  createdWindow.on('blur', () => {
+    if (!createdWindow.isDestroyed()) createdWindow.close();
+  });
+  createdWindow.on('closed', () => {
+    if (window === createdWindow) window = null;
+  });
+
+  return createdWindow;
 }
 
-function positionWindow() {
+function positionWindow(targetWindow) {
   const trayBounds = tray.getBounds();
-  const windowBounds = window.getBounds();
+  const windowBounds = targetWindow.getBounds();
   const display = screen.getDisplayNearestPoint({
     x: trayBounds.x,
     y: trayBounds.y
@@ -280,19 +303,26 @@ function positionWindow() {
   const x = Math.round(trayBounds.x + trayBounds.width / 2 - windowBounds.width / 2);
   const y = Math.round(display.workArea.y + 28);
 
-  window.setPosition(x, y, false);
+  targetWindow.setPosition(x, y, false);
 }
 
 function toggleWindow() {
-  if (window.isVisible()) {
-    window.hide();
+  if (window && !window.isDestroyed()) {
+    window.close();
     return;
   }
 
-  positionWindow();
-  window.show();
-  window.focus();
-  updateTrayTitle();
+  const createdWindow = createWindow();
+  createdWindow.loadFile(path.join(__dirname, 'index.html')).then(() => {
+    if (createdWindow.isDestroyed()) return;
+
+    positionWindow(createdWindow);
+    createdWindow.show();
+    createdWindow.focus();
+    updateTrayTitle();
+  }).catch(() => {
+    if (!createdWindow.isDestroyed()) createdWindow.close();
+  });
 }
 
 function createTray() {
@@ -313,7 +343,8 @@ app.whenReady().then(() => {
   if (app.dock) app.dock.hide();
 
   createTray();
-  createWindow();
+  refreshStateFromDisk();
+  watchStateFile();
   requestStartupNotificationPermission();
   updateTrayTitle();
 
@@ -322,12 +353,12 @@ app.whenReady().then(() => {
 
 app.on('before-quit', () => {
   if (timerId) clearInterval(timerId);
+  fs.unwatchFile(statePath);
   clearNotificationTimers();
 });
 
-app.on('window-all-closed', (event) => {
-  event.preventDefault();
-});
+// Keep the tray app running when its on-demand popover is closed.
+app.on('window-all-closed', () => {});
 
 ipcMain.handle('state:get', () => buildViewModel());
 ipcMain.handle('setup:get', () => getSetupStatus());
