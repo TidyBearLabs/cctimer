@@ -1,41 +1,41 @@
 # cctimer
 
-Claude Code の 5時間レートリミットサイクルを macOS メニューバーに表示する Electron アプリです。
+An Electron app that shows Claude Code's 5-hour rate limit cycle in the macOS menu bar.
 
-## 仕組み
+## How It Works
 
-Claude Code の status line は、Pro/Max などの Claude.ai サブスクライバー向けに `rate_limits.five_hour.resets_at` と `rate_limits.five_hour.used_percentage` を stdin JSON でスクリプトへ渡します。
+For Claude.ai subscribers, such as Pro and Max users, Claude Code's status line passes `rate_limits.five_hour.resets_at` and `rate_limits.five_hour.used_percentage` to a script as JSON over stdin.
 
-このプロジェクトでは `scripts/claude-statusline.js` がその値を保存し、Electron アプリが保存先を監視してメニューバーに残り時間を表示します。
+In this project, `scripts/claude-statusline.js` saves those values, and the Electron app watches the saved state to show the remaining time in the menu bar.
 
-## インストール
+## Installation
 
-最新の zip を [Releases](https://github.com/TidyBearLabs/cctimer/releases) からダウンロードし、展開した `cctimer.app` を `Applications` に移動して起動してください。
+Download the latest zip from [Releases](https://github.com/TidyBearLabs/cctimer/releases), extract it, move `cctimer.app` to `Applications`, and launch it.
 
-## Claude Code 側の設定
+## Claude Code Setup
 
-アプリのポップオーバーにある `セットアップ` を押すと、`~/.claude/settings.json` に cctimer のラッパー command を設定します。
+Click `Setup` in the app popover to configure cctimer's wrapper command in `~/.claude/settings.json`.
 
-CLI から実行する場合は次のコマンドです。
+To run setup from the CLI, use:
 
 ```bash
 npm run setup
 ```
 
-既存の `statusLine.command` がある場合は上書きして消すのではなく、`~/Library/Application Support/cctimer/statusline-config.json` に元 command を保存します。Claude Code から渡された JSON は cctimer が先に保存し、その後で元 command に同じ JSON を渡すため、既存の status line 表示は維持されます。
+If an existing `statusLine.command` is configured, cctimer does not overwrite and discard it. Instead, it saves the original command to `~/Library/Application Support/cctimer/statusline-config.json`. cctimer first saves the JSON passed from Claude Code, then passes the same JSON to the original command, so your existing status line display is preserved.
 
-設定時には `~/.claude/settings.json.cctimer-backup-*` というバックアップを作成します。Claude Code の次の応答以降に rate limit 情報が渡されると、メニューバー表示が更新されます。
+During setup, cctimer creates a backup named `~/.claude/settings.json.cctimer-backup-*`. Once rate limit information is passed after the next Claude Code response, the menu bar display will update.
 
-## 保存先
+## Storage Location
 
-デフォルトでは次の JSON ファイルに状態を保存します。
+By default, cctimer saves state to the following JSON file:
 
 ```text
 ~/Library/Application Support/cctimer/rate-limit.json
 ```
 
-保存先を変える場合は、Electron アプリと statusline スクリプトの両方に同じ `CCTIMER_STATE_PATH` を指定してください。
+To change the storage location, set the same `CCTIMER_STATE_PATH` for both the Electron app and the status line script.
 
-## 注意
+## Notes
 
-`rate_limits` は Claude.ai サブスクライバーで、かつ Claude Code セッション内の最初の API 応答後にだけ存在します。値がまだない場合、メニューバーには `↻ --:--:--` と表示されます。
+`rate_limits` is only available for Claude.ai subscribers, and only after the first API response in a Claude Code session. If the value is not available yet, the menu bar shows `↻ --:--:--`.
