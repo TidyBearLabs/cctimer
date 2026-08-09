@@ -72,7 +72,7 @@ function refreshStateFromDisk() {
 
 function watchStateFile() {
   // Poll file metadata, then read JSON only when Claude Code updates the file.
-  fs.watchFile(statePath, { interval: 1000 }, (current, previous) => {
+  fs.watchFile(statePath, { interval: 5000 }, (current, previous) => {
     if (current.mtimeMs === previous.mtimeMs && current.size === previous.size) return;
     if (refreshStateFromDisk()) updateTrayTitle();
   });
