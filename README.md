@@ -16,6 +16,8 @@ Install cctimer with Homebrew:
 brew install --cask TidyBearLabs/tap/cctimer
 ```
 
+Alternatively, download the latest zip from [Releases](https://github.com/TidyBearLabs/cctimer/releases), extract it, move `cctimer.app` to `Applications`, and launch it.
+
 ## Claude Code Setup
 
 Click `Setup` in the app popover to configure cctimer's wrapper command in `~/.claude/settings.json`.
