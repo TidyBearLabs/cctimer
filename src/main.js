@@ -107,7 +107,7 @@ function showResetNotification(resetAt) {
   lastNotifiedResetAt = resetAt;
   const notification = new Notification({
     title: 'Claude Code timer reset',
-    body: 'The 5-hour rate limit cycle has reset.'
+    body: 'The 5h rate limit cycle has reset.'
   });
 
   notification.show();
@@ -171,8 +171,8 @@ function requestStartupNotificationPermission() {
     // macOS shows the system permission dialog only when the app posts a notification.
     markStartupNotificationPrompted();
     const notification = new Notification({
-      title: 'cctimer notifications enabled',
-      body: 'You will be notified when the 5-hour timer resets.'
+      title: 'Enable cctimer notifications',
+      body: 'Allow notifications to be notified when the 5h timer resets.'
     });
     notification.show();
   } catch {
