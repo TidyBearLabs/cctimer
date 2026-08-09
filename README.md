@@ -10,7 +10,11 @@ In this project, `scripts/claude-statusline.js` saves those values, and the Elec
 
 ## Installation
 
-Download the latest zip from [Releases](https://github.com/TidyBearLabs/cctimer/releases), extract it, move `cctimer.app` to `Applications`, and launch it.
+Install cctimer with Homebrew:
+
+```bash
+brew install --cask TidyBearLabs/tap/cctimer
+```
 
 ## Claude Code Setup
 
