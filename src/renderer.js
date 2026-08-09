@@ -9,7 +9,6 @@ const updatedEl = document.querySelector('[data-updated]');
 const modelEl = document.querySelector('[data-model]');
 const barEl = document.querySelector('[data-bar]');
 const sevenDayBarEl = document.querySelector('[data-seven-day-bar]');
-const pathEl = document.querySelector('[data-path]');
 const setupStatusEl = document.querySelector('[data-setup-status]');
 const setupButtonEl = document.querySelector('[data-setup-button]');
 
@@ -50,7 +49,6 @@ function render(state) {
   modelEl.textContent = state.model;
   barEl.style.width = `${normalizedUsed}%`;
   sevenDayBarEl.style.width = `${normalizedSevenDayUsed}%`;
-  pathEl.textContent = state.statePath;
 }
 
 function renderSetupStatus(status) {

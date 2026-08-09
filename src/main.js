@@ -1,16 +1,24 @@
 // Where: Electron main process. What: create the macOS menu bar timer. Why: show Claude Code's 5-hour reset countdown outside the terminal.
 
-const { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, screen } = require('electron');
+const { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, screen, Notification } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
-const { statePath } = require('./paths');
+const { appDataDir, statePath } = require('./paths');
 const { formatRemaining, isFutureReset } = require('./statusline-state');
 const { getSetupStatus, installStatusline } = require('./statusline-setup');
 
 let tray;
 let window;
 let timerId;
+let resetNotificationTimerId;
+let scheduledNotificationResetAt = null;
+let lastNotifiedResetAt = null;
 let lastState = null;
+const maxNotificationDelayMs = 2_147_483_647;
+const startupNotificationPromptPath = path.join(
+  appDataDir,
+  `notification-permission-prompt-${app.isPackaged ? 'packaged' : 'development'}.json`
+);
 
 function readState() {
   try {
@@ -79,9 +87,96 @@ function updateTrayTitle() {
   tray.setTitle(`↻ ${viewModel.fiveHour.remaining}`, {
     fontType: 'monospacedDigit'
   });
+  scheduleResetNotification(viewModel.fiveHour.resetsAt);
 
   if (window && !window.isDestroyed()) {
     window.webContents.send('state:update', viewModel);
+  }
+}
+
+function clearResetNotificationTimer() {
+  if (!resetNotificationTimerId) return;
+
+  clearTimeout(resetNotificationTimerId);
+  resetNotificationTimerId = null;
+}
+
+function showResetNotification(resetAt) {
+  if (lastNotifiedResetAt === resetAt || !Notification.isSupported()) return;
+
+  lastNotifiedResetAt = resetAt;
+  const notification = new Notification({
+    title: 'Claude Code timer reset',
+    body: 'The 5-hour rate limit cycle has reset.'
+  });
+
+  notification.show();
+}
+
+function notifyIfResetIsCurrent(resetAt) {
+  const freshState = readState();
+  if (freshState) lastState = freshState;
+
+  scheduledNotificationResetAt = null;
+  resetNotificationTimerId = null;
+
+  // The timeout may fire after Claude Code has already reported a newer cycle.
+  if (lastState?.five_hour?.resets_at !== resetAt) return;
+
+  showResetNotification(resetAt);
+  updateTrayTitle();
+}
+
+function scheduleResetNotification(resetAt) {
+  if (!isFutureReset(resetAt) || lastNotifiedResetAt === resetAt) {
+    scheduledNotificationResetAt = null;
+    clearResetNotificationTimer();
+    return;
+  }
+
+  if (scheduledNotificationResetAt === resetAt) return;
+
+  scheduledNotificationResetAt = resetAt;
+  clearResetNotificationTimer();
+
+  const delayMs = Math.min(
+    Math.max(0, Math.ceil(resetAt * 1000 - Date.now())),
+    maxNotificationDelayMs
+  );
+  resetNotificationTimerId = setTimeout(() => notifyIfResetIsCurrent(resetAt), delayMs);
+}
+
+function hasPromptedForStartupNotifications() {
+  try {
+    const promptState = JSON.parse(fs.readFileSync(startupNotificationPromptPath, 'utf8'));
+    return promptState.prompted === true;
+  } catch {
+    return false;
+  }
+}
+
+function markStartupNotificationPrompted() {
+  fs.mkdirSync(path.dirname(startupNotificationPromptPath), { recursive: true });
+  fs.writeFileSync(
+    startupNotificationPromptPath,
+    `${JSON.stringify({ prompted: true, prompted_at: new Date().toISOString() }, null, 2)}\n`,
+    'utf8'
+  );
+}
+
+function requestStartupNotificationPermission() {
+  if (!Notification.isSupported() || hasPromptedForStartupNotifications()) return;
+
+  try {
+    // macOS shows the system permission dialog only when the app posts a notification.
+    markStartupNotificationPrompted();
+    const notification = new Notification({
+      title: 'cctimer notifications enabled',
+      body: 'You will be notified when the 5-hour timer resets.'
+    });
+    notification.show();
+  } catch {
+    // Permission prompting is best-effort; the app can still run without notifications.
   }
 }
 
@@ -165,6 +260,7 @@ app.whenReady().then(() => {
 
   createTray();
   createWindow();
+  requestStartupNotificationPermission();
   updateTrayTitle();
 
   timerId = setInterval(updateTrayTitle, 1000);
@@ -172,6 +268,7 @@ app.whenReady().then(() => {
 
 app.on('before-quit', () => {
   if (timerId) clearInterval(timerId);
+  clearResetNotificationTimer();
 });
 
 app.on('window-all-closed', (event) => {
