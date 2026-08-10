@@ -18,6 +18,16 @@ const scheduledNotifications = new Map();
 const notifiedNotifications = new Set();
 let lastState = null;
 const maxNotificationDelayMs = 2_147_483_647;
+const resetTimeFormatter = new Intl.DateTimeFormat('en-US', {
+  hour: '2-digit',
+  minute: '2-digit'
+});
+const resetDateTimeFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'numeric',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit'
+});
 const notificationSchedules = [
   {
     id: 'five-hour-warning',
@@ -74,28 +84,23 @@ function watchStateFile() {
   // Poll file metadata, then read JSON only when Claude Code updates the file.
   fs.watchFile(statePath, { interval: 5000 }, (current, previous) => {
     if (current.mtimeMs === previous.mtimeMs && current.size === previous.size) return;
-    if (refreshStateFromDisk()) updateTrayTitle();
+    if (!refreshStateFromDisk()) return;
+
+    scheduleCurrentNotifications();
+    updateTrayTitle();
   });
 }
 
 function formatResetTime(resetEpochSeconds) {
   if (!Number.isFinite(resetEpochSeconds)) return null;
 
-  return new Intl.DateTimeFormat('en-US', {
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(new Date(resetEpochSeconds * 1000));
+  return resetTimeFormatter.format(new Date(resetEpochSeconds * 1000));
 }
 
 function formatResetDateTime(resetEpochSeconds) {
   if (!Number.isFinite(resetEpochSeconds)) return null;
 
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'numeric',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(new Date(resetEpochSeconds * 1000));
+  return resetDateTimeFormatter.format(new Date(resetEpochSeconds * 1000));
 }
 
 function buildViewModel() {
@@ -134,10 +139,6 @@ function updateTrayTitle() {
   tray.setTitle(`↻ ${viewModel.fiveHour.remaining}`, {
     fontType: 'monospacedDigit'
   });
-  scheduleNotifications({
-    five_hour: viewModel.fiveHour.resetsAt,
-    seven_day: viewModel.sevenDay.resetsAt
-  });
 
   if (window && !window.isDestroyed()) {
     window.webContents.send('state:update', viewModel);
@@ -172,7 +173,10 @@ function notifyIfScheduleIsCurrent(schedule, resetAt) {
   scheduledNotifications.delete(schedule.id);
 
   // The timeout may fire after Claude Code has already reported a newer cycle.
-  if (lastState?.[schedule.stateKey]?.resets_at !== resetAt) return;
+  if (lastState?.[schedule.stateKey]?.resets_at !== resetAt) {
+    scheduleCurrentNotifications();
+    return;
+  }
 
   showScheduledNotification(schedule, resetAt);
   updateTrayTitle();
@@ -208,6 +212,14 @@ function scheduleNotifications(resetTimes) {
   for (const schedule of notificationSchedules) {
     scheduleNotification(schedule, resetTimes[schedule.stateKey]);
   }
+}
+
+function scheduleCurrentNotifications() {
+  const viewModel = buildViewModel();
+  scheduleNotifications({
+    five_hour: viewModel.fiveHour.resetsAt,
+    seven_day: viewModel.sevenDay.resetsAt
+  });
 }
 
 function clearNotificationTimers() {
@@ -346,6 +358,7 @@ app.whenReady().then(() => {
   refreshStateFromDisk();
   watchStateFile();
   requestStartupNotificationPermission();
+  scheduleCurrentNotifications();
   updateTrayTitle();
 
   timerId = setInterval(updateTrayTitle, 1000);
