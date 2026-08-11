@@ -20,13 +20,15 @@ let lastState = null;
 const maxNotificationDelayMs = 2_147_483_647;
 const resetTimeFormatter = new Intl.DateTimeFormat('en-US', {
   hour: '2-digit',
-  minute: '2-digit'
+  minute: '2-digit',
+  hour12: false
 });
 const resetDateTimeFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'numeric',
   day: 'numeric',
   hour: '2-digit',
-  minute: '2-digit'
+  minute: '2-digit',
+  hour12: false
 });
 const notificationSchedules = [
   {
