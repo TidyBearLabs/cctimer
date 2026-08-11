@@ -1,6 +1,6 @@
 {
   "name": "cctimer",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "private": true,
   "description": "Claude Code rate limit countdown for the macOS menu bar.",
   "main": "src/main.js",
